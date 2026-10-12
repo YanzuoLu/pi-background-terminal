@@ -1,5 +1,5 @@
 {
-  "name": "@bytetrue/pi-background-terminal",
+  "name": "pi-background-terminal",
   "version": "0.12.0",
   "description": "Pi extension: background_run starts shell commands hands-off with automatic exit notifications; background tasks are hard-capped at 28800s (8h) with renewal via restart. The optional 300s foreground shell cap is the separate pi-bash-timeout small extension (small-extensions/ in this repo), not part of this package.",
   "keywords": [
@@ -12,18 +12,15 @@
   "author": "byte",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ByteTrue/pi-package-mono.git",
-    "directory": "packages/pi-background-terminal"
-  },
-  "publishConfig": {
-    "access": "public"
+    "url": "git+https://github.com/YanzuoLu/pi-background-terminal.git"
   },
   "files": [
     "src/**",
     "!src/**/*.test.ts",
     "!src/**/test-helpers.ts",
     "docs/banner.webp",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "pi": {
     "extensions": [
@@ -35,12 +32,15 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "@earendil-works/pi-coding-agent": ">=1.1.0",
+    "@earendil-works/pi-coding-agent": "*",
     "typebox": "*"
   },
   "devDependencies": {
+    "@earendil-works/pi-coding-agent": "^0.87.1",
     "@types/node": "^22.0.0",
+    "typebox": "*",
     "typescript": "^5.0.0",
     "vitest": "^4.1.11"
-  }
+  },
+  "homepage": "https://github.com/YanzuoLu/pi-background-terminal#readme"
 }

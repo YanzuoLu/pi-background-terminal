@@ -16,7 +16,7 @@
 Pi's built-in `bash` is the foreground executor — and this package never touches it. It adds one standalone tool for the other half of the decision:
 
 - **Need the command's output to continue?** Use `bash` — it blocks and returns the result.
-- **Should it run hands-off (builds, test suites, dev servers, watch mode)?** Use `background_run` — it returns a task id immediately, and the Agent keeps working or ends its turn, and the command's exit arrives as a new message (exit code + last output line) that starts the next turn. That notification is how the Agent waits.
+- **Should it run hands-off (builds, test suites, dev servers, watch mode)?** Use `background_run` — it returns a task id immediately, and the Agent keeps working or ends its turn, and the command's exit arrives as a new message (exit code + last output line), during the current turn if the Agent is still working or as the start of its next turn. That notification is how the Agent waits.
 
 `background_run(command, timeout?)`:
 
@@ -34,13 +34,13 @@ Restart or reload Pi, then ask naturally:
 
 > Start the test suite running hands-off — get back to me when it finishes.
 
-The Agent calls `background_run`, keeps working or waits, and reports the outcome when the exit notification arrives. Completions that pile up while the Agent is busy arrive as one batched follow-up, not one turn per task.
+The Agent calls `background_run`, keeps working or waits, and reports the outcome when the exit notification arrives. A completion that lands while the Agent is busy is steered into its current turn right away, so the Agent sees it before its next model request instead of in an extra turn afterwards.
 
 ## Tools
 
 | Tool | Required input | Result |
 | --- | --- | --- |
-| `background_run` | `command` | Task id + output file path, immediately; exit reported via follow-up; optional `timeout` (default 600s) |
+| `background_run` | `command` | Task id + output file path, immediately; exit reported as a message; optional `timeout` (default 600s) |
 | `background_status` | `id` | Status, exit code, line count, output path, and recent output |
 | `background_kill` | `id` | Stops a running task |
 

@@ -29,7 +29,8 @@ export const HARD_CAP_LIFETIME_SECONDS = 28_800;
 /**
  * `background_run` — a pure background executor. It never waits, never returns command
  * output inline; it starts the command and returns a task id immediately. The exit
- * (natural, failed, or timed-out) wakes the agent with a follow-up.
+ * (natural, failed, or timed-out) is reported as a message: steered into the current turn
+ * while the agent is working, or waking it into a new turn when it is idle.
  *
  * The selection axis against the built-in bash is "do you need the result now":
  * the model knows this before calling — no duration prediction involved. bash is the
@@ -40,7 +41,7 @@ export const HARD_CAP_LIFETIME_SECONDS = 28_800;
  * - timeout defaults to 600s total lifetime; explicit values are honored up to the
  *   hard cap (`HARD_CAP_LIFETIME_SECONDS`), above which they are clamped — and a timed-out
  *   dev server renews by restarting (the wake-up message says so);
- * - the exit notification (followUp + triggerTurn) fires exactly once per task.
+ * - the exit notification (steer + triggerTurn) fires exactly once per task.
  *
  * This being a pure background tool, print/json sessions (pi -p, subagent children)
  * need no special-casing: there is no wait to keep alive. The task runs while the
@@ -56,14 +57,14 @@ export function registerBackgroundRunTool(pi: ExtensionAPI): void {
   pi.registerTool({
     name: "background_run",
     label: "Run Command in Background",
-    description: `Starts a shell command in the background and returns immediately with a task id; the command keeps running on its own. Use it for work that should run hands-off — builds, test suites, dev servers, watch mode. When you need the output to decide your next step, use bash instead. After it starts, continue with other work or end your turn: its exit — natural, failed, or timed-out — arrives as a new message that starts your next turn. That notification is how you wait. The command is hard-killed after timeout seconds (default ${DEFAULT_LIFETIME_SECONDS}, hard cap ${HARD_CAP_LIFETIME_SECONDS} — larger values are clamped). A dev server that hits the cap is renewed by restarting it with background_run; the timeout notification tells you when. Full output streams to a file (path in the result); use read on that path.`,
+    description: `Starts a shell command in the background and returns immediately with a task id; the command keeps running on its own. Use it for work that should run hands-off — builds, test suites, dev servers, watch mode. When you need the output to decide your next step, use bash instead. After it starts, continue with other work or end your turn: its exit — natural, failed, or timed-out — arrives as a new message, during your current turn if you are still working or as the start of your next turn. That notification is how you wait. The command is hard-killed after timeout seconds (default ${DEFAULT_LIFETIME_SECONDS}, hard cap ${HARD_CAP_LIFETIME_SECONDS} — larger values are clamped). A dev server that hits the cap is renewed by restarting it with background_run; the timeout notification tells you when. Full output streams to a file (path in the result); use read on that path.`,
     promptSnippet: `Start a command in the background; its exit arrives later as a new message. Use bash when you need the result now.`,
     // Positive-first wording (decision 001): each line says what to do; the wait model is stated
     // explicitly because a bare "do not poll" left a vacuum the model filled with `sleep`.
     promptGuidelines: [
       "Use background_run for work that should run hands-off — builds, test suites, dev servers, watch mode — anything you can leave running while you do other things",
       "When you need a command's output to decide your next step, use bash — it blocks and returns the output",
-      "After background_run returns, the command is already running: continue with other work or end your turn. Its exit arrives as a new message that starts your next turn — that notification is how you wait. background_status is for a one-off look at partial output",
+      "After background_run returns, the command is already running: continue with other work or end your turn. Its exit arrives as a new message, during your current turn if you are still working or as the start of your next turn — that notification is how you wait. background_status is for a one-off look at partial output",
       `timeout is a hard lifetime cap (default ${DEFAULT_LIFETIME_SECONDS}s, hard cap ${HARD_CAP_LIFETIME_SECONDS}s — larger values are clamped); pass a larger value for dev servers and watch modes, and restart with background_run when the timeout notification arrives to renew them`,
       `Pi caps bash/powershell foreground calls at ${SHELL_TIMEOUT_SECONDS}s only when the optional pi-bash-timeout extension is installed (it injects the default and caps explicit values); when a command needs longer, run it with background_run and a larger timeout instead of blocking on bash`,
     ],
