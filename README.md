@@ -46,6 +46,8 @@ The Agent calls `background_run`, keeps working or waits, and reports the outcom
 
 No built-in tool is overridden, shadowed, or registered under a built-in name.
 
+While tasks run, the footer's first line ends with ` • bg:N`, after the working directory and session name, where N is the number of running tasks.
+
 ## Staying out of the built-ins' way
 
 - `bash` (and `powershell`) keep their exact built-in behavior — no default timeout, no clamping, no steering on timeout errors. The optional 300s inject-and-clamp hook (plus the timeout-error steering block) lives in the [`pi-bash-timeout`](../../small-extensions/pi-bash-timeout) small extension; install it alongside this package if you want that safety net.

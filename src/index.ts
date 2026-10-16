@@ -1,11 +1,17 @@
-import { truncateLine, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { FooterComponent, truncateLine, type ExtensionAPI, type ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { manager, sweepOrphanLogs, type BackgroundTask } from "./background/manager.js";
 import { registerBackgroundCommand } from "./background-command.js";
+import { placeStatusOnFirstLine } from "./footer-status.js";
 import { registerBackgroundKillTool } from "./tools/background-kill.js";
 import { registerBackgroundStatusTool } from "./tools/background-status.js";
 import { registerBackgroundRunTool } from "./tools/background-run.js";
 
+const STATUS_KEY = "background-terminal";
+
 export default function registerBackgroundTerminal(pi: ExtensionAPI): void {
+  // The footer takes the theme when it draws, so the status follows a theme switch like the rest of it.
+  let ui: ExtensionContext["ui"] | undefined;
+  placeStatusOnFirstLine(FooterComponent, STATUS_KEY, (text) => ui?.theme.fg("dim", text) ?? text);
   // Crash paths (uncaughtException, terminal EIO) never fire session_shutdown, so logs
   // from those sessions survive on disk. Sweep stale ones on every load (startup + /reload).
   sweepOrphanLogs();
@@ -42,11 +48,12 @@ export default function registerBackgroundTerminal(pi: ExtensionAPI): void {
   registerBackgroundKillTool(pi);
 
   pi.on("session_start", async (_event, ctx) => {
+    ui = ctx.ui;
     const sessionId = ctx.sessionManager.getSessionId();
     currentSessionId = sessionId;
     updateStatus = () => {
       const running = manager.list(sessionId).filter((task) => task.status === "running").length;
-      ctx.ui.setStatus("background-terminal", running === 0 ? undefined : `bg:${running}`);
+      ctx.ui.setStatus(STATUS_KEY, running === 0 ? undefined : `bg:${running}`);
     };
     updateStatus();
   });
@@ -57,7 +64,7 @@ export default function registerBackgroundTerminal(pi: ExtensionAPI): void {
     if (event.reason === "reload") return;
 
     const sessionId = ctx.sessionManager.getSessionId();
-    ctx.ui.setStatus("background-terminal", undefined);
+    ctx.ui.setStatus(STATUS_KEY, undefined);
     updateStatus = undefined;
     if (currentSessionId === sessionId) currentSessionId = null;
     await manager.clearSession(sessionId);
